@@ -208,19 +208,159 @@ function get_random_char()
    random_char=${array[$typenum]}
 }
 
-function main(){
-
+function clear_line()
+{ 
+   local i
+   for (( i=5; i<=21;i++ ))
+   do
+	for (( j=$1;j<=$1+9;j=j+1 ))
+	do
+	    echo -e "\033[44m\033["$i";"$j"H "
+	done
+   done
+   echo -e "\033[37;40m"
 }
-#draw_border
-#dis_welcome
-#echo -ne "\033[3;30Hstart the game.Y/N:"
-#read yourchoice 
-#if [ "$yourchoice" == "Y" ] || [ "$yourchoice" == "y" ];then
-#   draw_border
-#   modechoose
-#else
-#   clear 
-#   exit 1
-#fi
-#exit 1
+
+function move()
+{
+   local locate_row lastloca
+   locate_row=$(($1+5))
+   #显示需要输入的字符
+   echo -e "\033[30;44m\033["$locate_row";"$2"H$3\033[37;40m"
+   if [ "$1" -gt "0" ];then
+	lastloca=$(($locate_row-5))
+	echo -e "\033[30;44m\033["$lastloca";"$2"H \033[37;40m"
+   fi
+}
+
+function doexit()
+{
+   draw_border
+   echo -e "\033[10;30Hthis game will exit......."
+   echo -e "\033[0m"
+   sleep 2
+   clear
+   exit 1
+}
+
+function main()
+{
+   declare -i gamedonetime=0
+   declare -i gamestarttime=0
+   declare -i starttime
+   declare -i deadtime
+   declare -i curtime
+   declare -i donetime
+   declare -i numright=0
+   declare -i numtotal=0
+   declare -i accuracy=0
+#将相应的字符存进数组，$1为用户选择的击打字符类型
+   putarray $1
+   
+#初始化游戏开始时间
+
+   gamestarttime=`date +%s`
+   
+   while [ 1 ]
+   do
+	echo -e "\033[2;2H 请输入屏幕中的字母，在字符消失前!"
+	echo -e "\033[3;2H 游戏时间：    "
+	curtime=`date +%s`
+	gamedonetime=$curtime-$gamestarttime
+	echo -e "\033[31;40m\033[3;15H$gamedonetime s\033[37;40m"
+	echo -e "\033[3;60H 总数：\033[31;26m$numtotal\033[37;40m"
+	echo -e "\033[3;30H 正确率: \033[31;40m$accuracy % \033[37;40m"
+	echo -ne "\033[22;2H 你的输入为：                   "
+	clear_all_area
+	
+	for (( line=20;line<=60;line=line+10 ))
+	do
+	
+	    if [ "${ifchar[$line]}" == "" ] || [ "${donetime[$line]}" -gt "$time" ]
+	then
+		clear_line $line
+		if [ "$1" == "word" ];then
+		   read -u 4 word
+		   if [ "$word" == "" ];then
+			exec 4<$file
+		   fi
+		   putchar[$line]=$word
+		else
+		   get_random_char $1
+		   putchar[$line]=$random_char
+		fi
+		numtotal=$numtotal+1
+		ifchar[$line]=1
+		starttime[$line]=`date +%s`
+		curtime[$line]=${starttime[$line]}
+		donetime[$line]=$time
+		column[$line]=0
+		if [ "$1" == "word" ];then
+		   move 0 $line ${putchar[$line]}
+		fi
+	else
+		curtime[$line]=`date +%s`
+		donetime[$line]=${curtime[$line]}-${starttime[$line]}
+		move ${donetime[$line]} $line ${putchar[$line]}
+	 fi
+   done
+  
+   if [ "$1" != "word" ];then
+	echo -ne "\033[22;14H"	#清空输入字符
+	#检查用户输入字符
+	if read -n 1 -t 0.5 tmp
+	then
+	    #成功读入，循环检查输入是否与某一列匹配
+	    for (( line=20; line<=60; line=line+10 ))
+	    do
+		if [ "$tmp" == "${putchar[$line]}" ];then
+		   #清除该列显示
+		   clear_line $line
+		   #清除标志位
+		   ifchar[$line]=""
+		   echo -e "\007\033[32;40m\033[4;62H		right !\033[37;40m"
+		   numright=$numright+1
+		   break
+		else
+		    #否则显示错误
+		    echo -e "\033[31;40m\033[4;62Hwrong,try again!\033[37;40m"
+		fi
+	   done
+	fi
+     else
+	echo -ne "\033[22;14H"
+	if read tmp
+	then
+	    for (( line=20;line<=60;line=line+10 ))
+	    do
+		if [ "$tmp" == "${putchar[$line]}" ];then
+			clear_line $line
+			ifchar[$line]=""
+			echo -e "\007\033[32;40m\033[4;62H		right ! \033[37;40m"
+			numright=$numright+1
+			break
+		else
+			echo -e "\033[31;40m\033[4;62Hwrong,try again ! \033[37;40m"
+		fi
+	    done
+	fi
+   fi
+   trap " doexit " 2
+   accuracy=$numright*100/$numtotal
+done		
+}
+#---------------------------------------------------
+#主程序流程
+draw_border
+dis_welcome
+echo -ne "\033[3;30Hstart the game.Y/N:"
+read yourchoice 
+if [ "$yourchoice" == "Y" ] || [ "$yourchoice" == "y" ];then
+   draw_border
+   modechoose
+else
+   clear 
+   exit 1
+fi
+exit 1
 
