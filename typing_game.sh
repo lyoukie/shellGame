@@ -1,5 +1,5 @@
 
-function dis_welcome()
+function dis_welcome()    #绘制游戏欢迎界面
 {
     declare -r str='0000000010000000000000000000000000000010000100000000000000100000
 0000000010000000001000001000000000100001000100000000000000101000
@@ -37,34 +37,39 @@ function dis_welcome()
         fi
     done
 }
-declare -i time
+declare -i time    #通过时间变量控制相应的难度
 
-function modechoose()
+function modechoose()  #模式选择菜单
 {
-   echo -e "\033[8;30H1) easy mode"
-   echo -e "\033[9;30H2) normal mode"
-   echo -e "\033[10;30H3) difficult mode"
-   echo -ne "\033[22;2HPlease input your choice: "
-   read mode
-   case $mode in 
-	"1")
-	    time=10
-	    dismenu
-	    ;;
-	"2")
-	    time=5
-	    dismenu
-	    ;;
-	"3")
-	    time=3
-	    dismenu
-	    ;;
-	*)
-	echo -e "\033[22;2Hyour choice is wrong, please try again"
-	sleep 1
-  esac
+   while [ 1 ] 
+   do
+      clear
+      echo -e "\033[8;30H1) easy mode"
+      echo -e "\033[9;30H2) normal mode"
+      echo -e "\033[10;30H3) difficult mode"
+      echo -ne "\033[22;2HPlease input your choice: "
+      read mode
+      case $mode in 
+	  "1")
+	      time=10
+	      dismenu
+	      ;;
+	  "2")
+	      time=5
+	      dismenu
+	      ;;
+	  "3")
+	      time=3
+	      dismenu
+	      ;;
+	   *)
+	      echo -e "\033[22;2Hyour choice is wrong, please try again"
+	      sleep 1
+     esac
+
+  done
 }
-function dismenu()
+function dismenu()  #打字类型选择菜单
 {
    while [ 1 ]
    do
@@ -94,7 +99,7 @@ function dismenu()
 	   ;;
 	"4")
 	   draw_border
-	   read -p "哪个文件你想用于打字游戏联系："  file
+	   read -p "which file would you like to practice： "  file
 	   if [ ! -f "$file" ]; then
 		dismenu
 	   else
@@ -120,7 +125,7 @@ function dismenu()
     done
 }
 
-function draw_border()
+function draw_border()   #绘制边框
 {
    declare -i width
    declare -j high
@@ -147,7 +152,7 @@ function draw_border()
 	echo -e "\033["$i";"$width"H|\n"
    done
 }
-function clear_all_area()
+function clear_all_area()   #绘制打字区域
 {
   local i j
   for (( i=5;i<=21;i++ ))
@@ -159,7 +164,7 @@ function clear_all_area()
   done
   echo -e "\033[37;40m"
 }
-function putarray()
+function putarray()    #根据参数选择形成字符数组
 {
    local chars
    case $1 in
@@ -188,7 +193,7 @@ function putarray()
 	;;
     esac
 }
-function get_random_char()
+function get_random_char()    #生成随机字符，传入参数是需要产生的字符类型
 {
    local typenum
    declare -i typenum=0
@@ -208,7 +213,7 @@ function get_random_char()
    random_char=${array[$typenum]}
 }
 
-function clear_line()
+function clear_line()  #根据参数清除列
 { 
    local i
    for (( i=5; i<=21;i++ ))
@@ -221,7 +226,7 @@ function clear_line()
    echo -e "\033[37;40m"
 }
 
-function move()
+function move()   #功能：字符做下落路径移动；传入三个参数，第一个为字符当前行，第二个为字符所在列，第三个为字符本身
 {
    local locate_row lastloca
    locate_row=$(($1+5))
@@ -270,17 +275,17 @@ function main()
 	echo -e "\033[31;40m\033[3;15H$gamedonetime s\033[37;40m"
 	echo -e "\033[3;60H 总数：\033[31;26m$numtotal\033[37;40m"
 	echo -e "\033[3;30H 正确率: \033[31;40m$accuracy % \033[37;40m"
-	echo -ne "\033[22;2H 你的输入为：                   "
+	echo -ne "\033[22;2H 你的输入为:                   "
 	clear_all_area
-	
+	#循环五次，得到五列向下移动的字符
 	for (( line=20;line<=60;line=line+10 ))
 	do
-	
+	#判断是否被击落或者超时，ifchar[$line]为标志位
 	    if [ "${ifchar[$line]}" == "" ] || [ "${donetime[$line]}" -gt "$time" ]
 	then
 		clear_line $line
 		if [ "$1" == "word" ];then
-		   read -u 4 word
+		   read -u 4 word     #-u选项为读取文件描述符里的内容
 		   if [ "$word" == "" ];then
 			exec 4<$file
 		   fi
